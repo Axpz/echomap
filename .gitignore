@@ -1,0 +1,33 @@
+# Node modules（如果有使用 npm 管理依赖）
+node_modules/
+
+# 日志文件
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# 微信小程序 IDE 文件（本地开发配置）
+.project.private.config.json
+
+# 编译或构建输出
+dist/
+build/
+
+# 系统生成文件
+.DS_Store
+Thumbs.db
+
+# 临时文件
+*.tmp
+*.temp
+
+# 编辑器文件（VS Code / JetBrains 等）
+.vscode/
+.idea/
+
+# 小程序上传后的缓存
+miniprogram_npm/
+
+.env*

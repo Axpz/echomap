@@ -1,0 +1,96 @@
+<!-- index.wxml -->
+<navigation-bar
+  title="Echo Map"
+  back="{{false}}"
+  color="black"
+  background="#FFF"
+/>
+
+<view class="page-body">
+  <!-- 地图 -->
+  <map
+    class="map"
+    id="map"
+    longitude="{{center.longitude}}"
+    latitude="{{center.latitude}}"
+    scale="{{scale}}"
+    bindtap="onMapTap"
+    bindpoitap="onPoiTap"
+    show-location="true"
+  />
+
+  <!-- 底部弹窗 (非阻塞式) -->
+  <view class="bottom-sheet {{bottomSheetVisible ? 'bottom-sheet--show' : ''}}">
+    <!-- 关闭箭头 -->
+    <view class="bottom-sheet__header" bindtap="onCloseBottomSheet">
+      <view class="icon-arrow-down"></view>
+    </view>
+
+    <scroll-view class="bottom-sheet-content" scroll-y="true">
+      <view class="info-title">{{selectedLocation.name}}</view>
+      <view class="info-row">省份：{{selectedLocation.province || '解析中...'}}</view>
+      <view class="info-row">纬度：{{selectedLocation.latitude}}</view>
+      <view class="info-row">经度：{{selectedLocation.longitude}}</view>
+      
+      <view class="info-image-row" wx:if="{{previewImages.length > 0}}">
+        <image
+          wx:for="{{previewImages}}"
+          wx:key="*this"
+          class="info-image"
+          src="{{item}}"
+          mode="aspectFill"
+          data-index="{{index}}"
+          bindtap="onImagePreview"
+        />
+      </view>
+      <view class="info-title">{{selectedLocation.name}}</view>
+      <view class="info-row">省份：{{selectedLocation.province || '解析中...'}}</view>
+      <view class="info-row">纬度：{{selectedLocation.latitude}}</view>
+      <view class="info-row">经度：{{selectedLocation.longitude}}</view>
+      
+      <view class="info-image-row" wx:if="{{previewImages.length > 0}}">
+        <image
+          wx:for="{{previewImages}}"
+          wx:key="*this"
+          class="info-image"
+          src="{{item}}"
+          mode="aspectFill"
+          data-index="{{index}}"
+          bindtap="onImagePreview"
+        />
+      </view>
+      <view class="info-title">{{selectedLocation.name}}</view>
+      <view class="info-row">省份：{{selectedLocation.province || '解析中...'}}</view>
+      <view class="info-row">纬度：{{selectedLocation.latitude}}</view>
+      <view class="info-row">经度：{{selectedLocation.longitude}}</view>
+      
+      <view class="info-image-row" wx:if="{{previewImages.length > 0}}">
+        <image
+          wx:for="{{previewImages}}"
+          wx:key="*this"
+          class="info-image"
+          src="{{item}}"
+          mode="aspectFill"
+          data-index="{{index}}"
+          bindtap="onImagePreview"
+        />
+      </view>
+      <view class="info-title">{{selectedLocation.name}}</view>
+      <view class="info-row">省份：{{selectedLocation.province || '解析中...'}}</view>
+      <view class="info-row">纬度：{{selectedLocation.latitude}}</view>
+      <view class="info-row">经度：{{selectedLocation.longitude}}</view>
+      
+      <view class="info-image-row" wx:if="{{previewImages.length > 0}}">
+        <image
+          wx:for="{{previewImages}}"
+          wx:key="*this"
+          class="info-image"
+          src="{{item}}"
+          mode="aspectFill"
+          data-index="{{index}}"
+          bindtap="onImagePreview"
+        />
+      </view>
+    </scroll-view>
+  </view>
+</view>
