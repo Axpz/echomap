@@ -33,7 +33,7 @@
       
       <!-- 城市推荐 -->
       <block wx:if="{{cityImages.length > 0}}">
-        <view class="section-title">城市推荐</view>
+        <view class="section-title">{{selectedLocation.city}}推荐</view>
         <view class="info-image-row">
           <image
             wx:for="{{cityImages}}"
@@ -50,7 +50,7 @@
 
       <!-- 省份推荐 -->
       <block wx:if="{{provinceImages.length > 0}}">
-        <view class="section-title">省份推荐</view>
+        <view class="section-title">{{selectedLocation.province}}推荐</view>
         <view class="info-image-row">
           <image
             wx:for="{{provinceImages}}"

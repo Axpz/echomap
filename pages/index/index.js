@@ -1,4 +1,8 @@
 const { getLocalLocation } = require('../../utils/geo.js')
+const { setWithExpire, getWithExpire } = require('../../utils/storage.js')
+
+// 用于记录本周期（登录后）已校验过版本的路径
+const verifiedPaths = new Set();
 
 Page({
   data: {
@@ -40,6 +44,7 @@ Page({
         latitude: latitude.toFixed(6),
         longitude: longitude.toFixed(6),
         province: '',
+        city: '',
         provinceSlug: '',
         citySlug: '',
       },
@@ -103,6 +108,7 @@ Page({
         latitude: latitude.toFixed(6),
         longitude: longitude.toFixed(6),
         province,
+        city,
         provinceSlug,
         citySlug,
       },
@@ -116,20 +122,45 @@ Page({
     if (!path || path === 'unknown') return Promise.resolve([])
     
     const baseUrl = 'https://gitee.com/axpz/echomap/raw/main/assets/raw_images/'
+    const cacheKey = `meta_cache_${path}`
+    const cachedData = getWithExpire(cacheKey)
+
+    // 如果本地有缓存，且本次“登录”后已经校验过版本，则直接从缓存读取，不再发起网络请求
+    if (cachedData && verifiedPaths.has(path)) {
+      const images = cachedData.images.map(imgName => `${baseUrl}${path}/${imgName}`)
+      return Promise.resolve(images)
+    }
+
     return new Promise((resolve) => {
       wx.request({
         url: `${baseUrl}${path}/meta.json`,
         method: 'GET',
         success: (res) => {
           if (res.statusCode === 200 && res.data && res.data.images) {
-            const images = res.data.images.map(imgName => `${baseUrl}${path}/${imgName}`)
+            const remoteData = res.data
+            
+            // 标记该路径在本次“登录”会话中已校验过版本
+            verifiedPaths.add(path)
+
+            // 如果版本号变了，或者本地没缓存，则更新缓存
+            if (!cachedData || cachedData.version !== remoteData.version) {
+              setWithExpire(cacheKey, remoteData)
+            }
+
+            const images = remoteData.images.map(imgName => `${baseUrl}${path}/${imgName}`)
             resolve(images)
           } else {
             resolve([])
           }
         },
         fail: () => {
-          resolve([])
+          // 请求失败时，如果有旧缓存则降级使用缓存
+          if (cachedData) {
+            const images = cachedData.images.map(imgName => `${baseUrl}${path}/${imgName}`)
+            resolve(images)
+          } else {
+            resolve([])
+          }
         }
       })
     })

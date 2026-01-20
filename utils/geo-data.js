@@ -42,7 +42,7 @@ const PROVINCES = [
 
 // 城市中心点数据
 const CITIES = [
-  { name: '北京市', slug: 'beijing', province: '北京市', center: [116.405285, 39.904989] },
+  { name: '东城区', slug: 'dongcheng', province: '北京市', center: [116.405285, 39.904989] },
   { name: '天津市', slug: 'tianjin', province: '天津市', center: [117.190182, 39.125596] },
   { name: '上海市', slug: 'shanghai', province: '上海市', center: [121.472644, 31.231706] },
   { name: '重庆市', slug: 'chongqing', province: '重庆市', center: [106.504962, 29.533155] },
