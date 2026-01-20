@@ -11,7 +11,7 @@ function getDistance(p1, p2) {
  * 根据经纬度获取所在的省份和城市（离线版）
  * @param {number} longitude 经度
  * @param {number} latitude 纬度
- * @returns {Object} { province, city }
+ * @returns {Object} { province, city, provinceSlug, citySlug }
  */
 function getLocalLocation(longitude, latitude) {
   const point = [longitude, latitude];
@@ -25,6 +25,8 @@ function getLocalLocation(longitude, latitude) {
   // 2. 在这些省份的城市中找最近的
   let cityMatch = null;
   let provinceMatch = null;
+  let citySlugMatch = null;
+  let provinceSlugMatch = null;
   let minCityDist = Infinity;
 
   // 获取这些省份的所有城市
@@ -38,7 +40,9 @@ function getLocalLocation(longitude, latitude) {
       if (dist < minCityDist) {
         minCityDist = dist;
         cityMatch = c.name;
+        citySlugMatch = c.slug;
         provinceMatch = c.province;
+        provinceSlugMatch = PROVINCES.find(p => p.name === provinceMatch)?.slug;
       }
     }
   }
@@ -51,7 +55,9 @@ function getLocalLocation(longitude, latitude) {
       if (area < minArea) {
         minArea = area;
         provinceMatch = p.name;
+        provinceSlugMatch = p.slug;
         cityMatch = p.name;
+        citySlugMatch = p.slug;
       }
     }
   }
@@ -64,14 +70,18 @@ function getLocalLocation(longitude, latitude) {
       if (dist < minProvinceDist) {
         minProvinceDist = dist;
         provinceMatch = p.name;
+        provinceSlugMatch = p.slug;
         cityMatch = p.name;
+        citySlugMatch = p.slug;
       }
     }
   }
 
   return {
     province: provinceMatch || '未知省份',
-    city: cityMatch || provinceMatch || '未知城市'
+    city: cityMatch || provinceMatch || '未知城市',
+    provinceSlug: provinceSlugMatch || 'unknown',
+    citySlug: citySlugMatch || 'unknown'
   };
 }
 

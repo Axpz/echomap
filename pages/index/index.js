@@ -13,11 +13,11 @@ Page({
       latitude: '--',
       longitude: '--',
       province: '',
+      provinceSlug: '',
+      citySlug: '',
     },
-    previewImages: [
-      'https://heatpatch.axpz.org/uploads/74a211daffc6bf07a9b5f22b23930041.jpg',
-      'https://heatpatch.axpz.org/uploads/74a211daffc6bf07a9b5f22b23930041.jpg',
-    ],
+    cityImages: [],
+    provinceImages: [],
   },
   onLoad() {    
     this.initLocation()
@@ -40,7 +40,11 @@ Page({
         latitude: latitude.toFixed(6),
         longitude: longitude.toFixed(6),
         province: '',
+        provinceSlug: '',
+        citySlug: '',
       },
+      cityImages: [],
+      provinceImages: [],
     })
     this.reverseGeocode(latitude, longitude, name)
   },
@@ -59,7 +63,11 @@ Page({
             latitude: latitude.toFixed(6),
             longitude: longitude.toFixed(6),
             province: '',
+            provinceSlug: '',
+            citySlug: '',
           },
+          cityImages: [],
+          provinceImages: [],
         })
         this.reverseGeocode(latitude, longitude)
       },
@@ -70,48 +78,17 @@ Page({
             latitude: '--',
             longitude: '--',
             province: '',
+            provinceSlug: '',
+            citySlug: '',
           },
+          cityImages: [],
+          provinceImages: [],
         })
       },
     })
   },
   reverseGeocode(latitude, longitude, providedName) {
-    // const tencentMapKey = process.env.TENCENT_MAP_KEY
-    // wx.request({
-    //   url: 'https://apis.map.qq.com/ws/geocoder/v1/',
-    //   data: {
-    //     location: `${latitude},${longitude}`,
-    //     key: tencentMapKey,
-    //     get_poi: 0,
-    //   },
-    //   success: res => {
-    //     const data = res.data || {}
-    //     const result = data.result || {}
-    //     const addressComponent = result.address_component || {}
-    //     const province = addressComponent.province || ''
-    //     const city = addressComponent.city || ''
-    //     const district = addressComponent.district || ''
-    //     const name = province || city || district ? `${province}${city}${district}` : '未知位置'
-    //     this.setData({
-    //       selectedLocation: {
-    //         name,
-    //         latitude,
-    //         longitude,
-    //         province,
-    //       },
-    //     })
-    //   },
-    //   fail: () => {
-    //     this.setData({
-    //       selectedLocation: {
-    //         name: '省份解析失败',
-    //         latitude,
-    //         longitude,
-    //         province: '',
-    //       },
-    //     })
-
-    const { province, city } = getLocalLocation(longitude, latitude)
+    const { province, city, provinceSlug, citySlug } = getLocalLocation(longitude, latitude)
     
     // 如果提供了有效的名称（比如 POI 名称），则优先使用；
     // 否则使用解析出来的省份名称。
@@ -126,39 +103,69 @@ Page({
         latitude: latitude.toFixed(6),
         longitude: longitude.toFixed(6),
         province,
+        provinceSlug,
+        citySlug,
       },
     })
 
-    // 获取后端推荐方案
-    this.fetchRegionInfo(province)
+    // 获取城市和省份的图片（考虑嵌套关系）
+    this.fetchAllImages(citySlug, provinceSlug)
   },
-  fetchRegionInfo(province) {
-    // 简单的省份名称到 slug 的映射，这里先硬编码北京示例
-    // 实际项目中可以根据 province 动态生成 slug
-    let slug = 'beijing'
-    if (province.includes('北京')) slug = 'beijing'
-    else if (province.includes('上海')) slug = 'shanghai'
-    // ... 其他映射
-
-    wx.request({
-      url: `http://localhost:8080/api/v2/region/${slug}`,
-      method: 'GET',
-      success: (res) => {
-        if (res.statusCode === 200 && res.data && res.data.data) {
-          const regionData = res.data.data
-          const images = regionData.content ? regionData.content.images : []
-          
-          if (images && images.length > 0) {
-            this.setData({
-              previewImages: images
-            })
+  // 封装请求图片的方法，返回 Promise，参数为相对路径
+  fetchImagesBySlug(path) {
+    if (!path || path === 'unknown') return Promise.resolve([])
+    
+    const baseUrl = 'https://gitee.com/axpz/echomap/raw/main/assets/raw_images/'
+    return new Promise((resolve) => {
+      wx.request({
+        url: `${baseUrl}${path}/meta.json`,
+        method: 'GET',
+        success: (res) => {
+          if (res.statusCode === 200 && res.data && res.data.images) {
+            const images = res.data.images.map(imgName => `${baseUrl}${path}/${imgName}`)
+            resolve(images)
+          } else {
+            resolve([])
           }
+        },
+        fail: () => {
+          resolve([])
         }
-      },
-      fail: (err) => {
-        console.error('获取地区信息失败:', err)
-      }
+      })
     })
+  },
+  // 并行获取并合并图片
+  async fetchAllImages(citySlug, provinceSlug) {
+    // 构造路径：城市通常嵌套在省份文件夹下
+    // 如果 citySlug 和 provinceSlug 不同（如：hebei/shijiazhuang）
+    // 如果相同（如直辖市：beijing），则直接使用 provinceSlug
+    const isSpecialRegion = !citySlug || !provinceSlug || citySlug === provinceSlug
+    
+    const cityPath = isSpecialRegion ? citySlug : `${provinceSlug}/${citySlug}`
+    const provincePath = provinceSlug
+
+    const cityImagesPromise = this.fetchImagesBySlug(cityPath)
+    const provinceImagesPromise = !isSpecialRegion 
+      ? this.fetchImagesBySlug(provincePath) 
+      : Promise.resolve([])
+
+    try {
+      const [cityImages, provinceImages] = await Promise.all([
+        cityImagesPromise,
+        provinceImagesPromise
+      ])
+
+      this.setData({
+        cityImages: cityImages,
+        provinceImages: provinceImages
+      })
+    } catch (err) {
+      console.error('获取旅游信息失败:', err)
+      this.setData({ 
+        cityImages: [],
+        provinceImages: []
+      })
+    }
   },
   onCloseBottomSheet() {
     this.setData({
@@ -166,9 +173,9 @@ Page({
     })
   },
   onImagePreview(e) {
-    const { index } = e.currentTarget.dataset
-    const urls = this.data.previewImages || []
-    if (!urls.length) {
+    const { index, type } = e.currentTarget.dataset
+    const urls = type === 'city' ? this.data.cityImages : this.data.provinceImages
+    if (!urls || !urls.length) {
       return
     }
     const current = urls[index] || urls[0]
