@@ -25,6 +25,7 @@ Page({
     provinceImages: [],
     allKnowledge: [], // 合并后的知识库
     matchedKnowledge: null, // 匹配到的 POI 知识
+    knowledgeBaseExpanded: false, // 知识库是否展开
   },
   onLoad() {    
     this.initLocation()
@@ -55,8 +56,14 @@ Page({
       provinceImages: [],
       allKnowledge: [],
       matchedKnowledge: null,
+      knowledgeBaseExpanded: false,
     })
     this.reverseGeocode(latitude, longitude, name)
+  },
+  toggleKnowledgeBase() {
+    this.setData({
+      knowledgeBaseExpanded: !this.data.knowledgeBaseExpanded
+    })
   },
   initLocation() {
     wx.getLocation({
@@ -80,6 +87,7 @@ Page({
           provinceImages: [],
           allKnowledge: [],
           matchedKnowledge: null,
+          knowledgeBaseExpanded: false,
         })
         this.reverseGeocode(latitude, longitude)
       },
@@ -97,6 +105,7 @@ Page({
           provinceImages: [],
           allKnowledge: [],
           matchedKnowledge: null,
+          knowledgeBaseExpanded: false,
         })
       },
     })
@@ -135,11 +144,11 @@ Page({
     const cachedData = getWithExpire(cacheKey)
 
     const formatData = (data, slugPath) => {
-      const images = (data.images || []).map(img => `${baseUrl}${slugPath}/${img}`)
+      const images = (data.images || []).map(img => encodeURI(`${baseUrl}${slugPath}/${img}`))
       const files = (data.files || []).map(file => ({
         title: file.replace('.md', ''),
         file: file,
-        url: `${baseUrl}${slugPath}/${file}`
+        url: encodeURI(`${baseUrl}${slugPath}/${file}`)
       }))
       return { images, files }
     }
@@ -152,7 +161,7 @@ Page({
       wx.cloud.callFunction({
         name: 'giteeproxy',
         data: {
-          url: `${baseUrl}${path}/meta.json`
+          url: encodeURI(`${baseUrl}${path}/meta.json`)
         },
         success: (res) => {
           if (res.result && res.result.code === 0) {

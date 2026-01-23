@@ -16,10 +16,11 @@ exports.main = async (event, context) => {
   }
 
   try {
+    const isJson = url.endsWith('.json')
     const response = await axios({
       method: 'GET',
       url: url,
-      responseType: 'json'
+      responseType: isJson ? 'json' : 'text'
     })
 
     return {

@@ -1,7 +1,9 @@
+const { parse } = require('../../utils/markdown.js')
+
 Page({
   data: {
     title: '加载中...',
-    content: '',
+    htmlContent: '', // 解析后的 HTML 内容
     url: ''
   },
   onLoad(options) {
@@ -16,23 +18,28 @@ Page({
   },
   fetchArticleContent() {
     wx.showLoading({ title: '加载中...' })
-    wx.request({
-      url: this.data.url,
-      method: 'GET',
+    
+    wx.cloud.callFunction({
+      name: 'giteeproxy',
+      data: {
+        url: this.data.url
+      },
       success: (res) => {
-        if (res.statusCode === 200) {
+        if (res.result && res.result.code === 0) {
+          const content = res.result.data
           this.setData({
-            content: res.data
+            htmlContent: parse(content)
           })
         } else {
           this.setData({
-            content: '无法加载内容，请稍后再试。'
+            htmlContent: '<p>无法加载内容，请稍后再试。</p>'
           })
         }
       },
-      fail: () => {
+      fail: (err) => {
+        console.error('获取文章内容失败:', err)
         this.setData({
-          content: '网络请求失败，请检查网络连接。'
+          htmlContent: '<p>网络请求失败，请检查网络连接。</p>'
         })
       },
       complete: () => {

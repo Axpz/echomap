@@ -19,6 +19,7 @@
   },
   "homepage": "https://github.com/Axpz/echomap#readme",
   "dependencies": {
+    "marked": "^4.3.0",
     "string-similarity": "^4.0.4"
   }
 }
