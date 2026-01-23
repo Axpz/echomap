@@ -85,6 +85,56 @@ page {
   padding-left: 8rpx;
 }
 
+.knowledge-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+  margin-top: 20rpx;
+}
+
+.knowledge-item {
+  background: #f9f9f9;
+  padding: 24rpx;
+  border-radius: 16rpx;
+  border: 1rpx solid #eee;
+}
+
+.knowledge-item:active {
+  background: #f0f0f0;
+}
+
+.knowledge-item.matched {
+  border-color: #07c160;
+  background: #f0fff4;
+}
+
+.match-tag {
+  font-size: 20rpx;
+  background: #07c160;
+  color: #fff;
+  padding: 2rpx 8rpx;
+  border-radius: 6rpx;
+  margin-right: 12rpx;
+  vertical-align: middle;
+}
+
+.knowledge-title {
+  font-size: 30rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 12rpx;
+}
+
+.knowledge-summary {
+  font-size: 26rpx;
+  color: #666;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+}
+
 .info-image-row {
   margin-top: 32rpx;
   display: flex;

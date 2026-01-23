@@ -1,5 +1,6 @@
 const { getLocalLocation } = require('../../utils/geo.js')
 const { setWithExpire, getWithExpire } = require('../../utils/storage.js')
+const { matchKnowledge, normalize } = require('../../utils/match.js')
 
 // 用于记录本周期（登录后）已校验过版本的路径
 const verifiedPaths = new Set();
@@ -22,6 +23,8 @@ Page({
     },
     cityImages: [],
     provinceImages: [],
+    allKnowledge: [], // 合并后的知识库
+    matchedKnowledge: null, // 匹配到的 POI 知识
   },
   onLoad() {    
     this.initLocation()
@@ -50,6 +53,8 @@ Page({
       },
       cityImages: [],
       provinceImages: [],
+      allKnowledge: [],
+      matchedKnowledge: null,
     })
     this.reverseGeocode(latitude, longitude, name)
   },
@@ -73,6 +78,8 @@ Page({
           },
           cityImages: [],
           provinceImages: [],
+          allKnowledge: [],
+          matchedKnowledge: null,
         })
         this.reverseGeocode(latitude, longitude)
       },
@@ -88,6 +95,8 @@ Page({
           },
           cityImages: [],
           provinceImages: [],
+          allKnowledge: [],
+          matchedKnowledge: null,
         })
       },
     })
@@ -115,88 +124,117 @@ Page({
     })
 
     // 获取城市和省份的图片（考虑嵌套关系）
-    this.fetchAllImages(citySlug, provinceSlug)
+    this.fetchAllContent(citySlug, provinceSlug, name)
   },
-  // 封装请求图片的方法，返回 Promise，参数为相对路径
-  fetchImagesBySlug(path) {
-    if (!path || path === 'unknown') return Promise.resolve([])
+  // 封装请求内容的方法，返回 Promise，包含图片和原始文件名列表
+  fetchContentBySlug(path) {
+    if (!path || path === 'unknown') return Promise.resolve({ images: [], files: [] })
     
     const baseUrl = 'https://gitee.com/axpz/echomap/raw/main/assets/raw_images/'
     const cacheKey = `meta_cache_${path}`
     const cachedData = getWithExpire(cacheKey)
 
-    // 如果本地有缓存，且本次“登录”后已经校验过版本，则直接从缓存读取，不再发起网络请求
+    const formatData = (data, slugPath) => {
+      const images = (data.images || []).map(img => `${baseUrl}${slugPath}/${img}`)
+      const files = (data.files || []).map(file => ({
+        title: file.replace('.md', ''),
+        file: file,
+        url: `${baseUrl}${slugPath}/${file}`
+      }))
+      return { images, files }
+    }
+
     if (cachedData && verifiedPaths.has(path)) {
-      const images = cachedData.images.map(imgName => `${baseUrl}${path}/${imgName}`)
-      return Promise.resolve(images)
+      return Promise.resolve(formatData(cachedData, path))
     }
 
     return new Promise((resolve) => {
-      wx.request({
-        url: `${baseUrl}${path}/meta.json`,
-        method: 'GET',
+      wx.cloud.callFunction({
+        name: 'giteeproxy',
+        data: {
+          url: `${baseUrl}${path}/meta.json`
+        },
         success: (res) => {
-          if (res.statusCode === 200 && res.data && res.data.images) {
-            const remoteData = res.data
-            
-            // 标记该路径在本次“登录”会话中已校验过版本
+          if (res.result && res.result.code === 0) {
+            const remoteData = res.result.data
             verifiedPaths.add(path)
-
-            // 如果版本号变了，或者本地没缓存，则更新缓存
             if (!cachedData || cachedData.version !== remoteData.version) {
               setWithExpire(cacheKey, remoteData)
             }
-
-            const images = remoteData.images.map(imgName => `${baseUrl}${path}/${imgName}`)
-            resolve(images)
+            resolve(formatData(remoteData, path))
           } else {
-            resolve([])
+            console.error('云函数调用失败:', res.result ? res.result.msg : '未知错误')
+            resolve({ images: [], files: [] })
           }
         },
-        fail: () => {
-          // 请求失败时，如果有旧缓存则降级使用缓存
+        fail: (err) => {
+          console.error('云函数请求异常:', err)
           if (cachedData) {
-            const images = cachedData.images.map(imgName => `${baseUrl}${path}/${imgName}`)
-            resolve(images)
+            resolve(formatData(cachedData, path))
           } else {
-            resolve([])
+            resolve({ images: [], files: [] })
           }
         }
       })
     })
   },
-  // 并行获取并合并图片
-  async fetchAllImages(citySlug, provinceSlug) {
-    // 构造路径：城市通常嵌套在省份文件夹下
-    // 如果 citySlug 和 provinceSlug 不同（如：hebei/shijiazhuang）
-    // 如果相同（如直辖市：beijing），则直接使用 provinceSlug
-    const isSpecialRegion = !citySlug || !provinceSlug || citySlug === provinceSlug
-    
-    const cityPath = isSpecialRegion ? citySlug : `${provinceSlug}/${citySlug}`
-    const provincePath = provinceSlug
+  // 并行获取并合并内容
+  async fetchAllContent(citySlug, provinceSlug, poiName) {
+    const hasCity = citySlug && citySlug !== 'unknown';
+    const hasProvince = provinceSlug && provinceSlug !== 'unknown';
+    const isSame = citySlug === provinceSlug;
 
-    const cityImagesPromise = this.fetchImagesBySlug(cityPath)
-    const provinceImagesPromise = !isSpecialRegion 
-      ? this.fetchImagesBySlug(provincePath) 
-      : Promise.resolve([])
+    let cityPath = '';
+    let provincePath = '';
+
+    if (hasCity && hasProvince && !isSame) {
+      // 场景 1: 标准两级结构 (如 hebei/shijiazhuang)
+      cityPath = `${provinceSlug}/${citySlug}`;
+      provincePath = provinceSlug;
+    } else {
+      // 场景 2: 单级结构 (直辖市 beijing/beijing，或者只有省，或者只有市)
+      cityPath = hasCity ? citySlug : (hasProvince ? provinceSlug : '');
+      provincePath = ''; // 这种情况下不需要再读第二层
+    }
+
+    const cityPromise = cityPath ? this.fetchContentBySlug(cityPath) : Promise.resolve({ images: [], files: [] });
+    const provincePromise = provincePath ? this.fetchContentBySlug(provincePath) : Promise.resolve({ images: [], files: [] });
 
     try {
-      const [cityImages, provinceImages] = await Promise.all([
-        cityImagesPromise,
-        provinceImagesPromise
-      ])
+      const [cityContent, provinceContent] = await Promise.all([cityPromise, provincePromise])
+
+      // 层级合并策略：
+      // 1. 图片合并（城市优先）
+      const cityImages = cityContent.images
+      const provinceImages = provinceContent.images
+
+      // 2. 知识库合并：city.files + province.files，去重
+      const allKnowledgeMap = new Map()
+      // 先加省级的
+      provinceContent.files.forEach(f => allKnowledgeMap.set(f.title, f))
+      // 再加市级的（同名覆盖，即城市优先）
+      cityContent.files.forEach(f => allKnowledgeMap.set(f.title, f))
+      
+      const allKnowledge = Array.from(allKnowledgeMap.values())
+
+      // 3. POI 匹配
+      const matchedKnowledge = matchKnowledge(poiName, allKnowledge, 0.6)
 
       this.setData({
-        cityImages: cityImages,
-        provinceImages: provinceImages
+        cityImages,
+        provinceImages,
+        allKnowledge,
+        matchedKnowledge
       })
     } catch (err) {
-      console.error('获取旅游信息失败:', err)
-      this.setData({ 
-        cityImages: [],
-        provinceImages: []
-      })
+      console.error('获取内容失败:', err)
     }
+  },
+  onArticleTap(e) {
+    const { url, title } = e.currentTarget.dataset
+    wx.navigateTo({
+      url: `/pages/article/article?url=${encodeURIComponent(url)}&title=${encodeURIComponent(title)}`
+    })
   },
   onCloseBottomSheet() {
     this.setData({

@@ -1,39 +1,24 @@
 /**
- * 带过期时间的本地存储工具
+ * 本地存储工具（基于版本控制，不再使用过期时间）
  */
-
-const FIFTEEN_DAYS_MS = 15 * 24 * 60 * 60 * 1000;
 
 /**
- * 设置带过期时间的缓存
+ * 设置本地存储
  * @param {string} key 
  * @param {any} data 
- * @param {number} expire 过期时间（毫秒），默认15天
  */
-function setWithExpire(key, data, expire = FIFTEEN_DAYS_MS) {
-  const expireTime = Date.now() + expire;
-  const payload = {
-    data,
-    expireTime
-  };
-  wx.setStorageSync(key, payload);
+function setWithExpire(key, data) {
+  wx.setStorageSync(key, data);
 }
 
 /**
- * 获取缓存，如果过期则返回 null
+ * 获取本地存储
  * @param {string} key 
  * @returns {any|null}
  */
 function getWithExpire(key) {
-  const payload = wx.getStorageSync(key);
-  if (!payload) return null;
-
-  if (Date.now() > payload.expireTime) {
-    wx.removeStorageSync(key);
-    return null;
-  }
-
-  return payload.data;
+  const data = wx.getStorageSync(key);
+  return data || null;
 }
 
 module.exports = {

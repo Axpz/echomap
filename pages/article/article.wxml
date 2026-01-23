@@ -1,0 +1,8 @@
+<view class="container">
+  <navigation-bar title="{{title}}" back="{{true}}" color="black" background="#FFF"></navigation-bar>
+  <scroll-view class="content-scroll" scroll-y="true">
+    <view class="article-content">
+      <text class="article-text" user-select="true">{{content}}</text>
+    </view>
+  </scroll-view>
+</view>

@@ -1,0 +1,24 @@
+{
+  "name": "echomap",
+  "version": "0.1.0",
+  "description": "Echo Map 是一款专为“第一次去某个地方”设计的旅游小程序。它旨在解决初次到达陌生城市时的迷茫，通过地图交互，即时为你提供最地道的省份识别与精选旅游方案。",
+  "main": ".eslintrc.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Axpz/echomap.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Axpz/echomap/issues"
+  },
+  "homepage": "https://github.com/Axpz/echomap#readme",
+  "dependencies": {
+    "string-similarity": "^4.0.4"
+  }
+}

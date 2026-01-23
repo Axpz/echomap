@@ -9,7 +9,9 @@ yarn-debug.log*
 yarn-error.log*
 
 # 微信小程序 IDE 文件（本地开发配置）
-.project.private.config.json
+project.private.config.json
+project.config.json
+.env*
 
 # 编译或构建输出
 dist/
@@ -30,4 +32,4 @@ Thumbs.db
 # 小程序上传后的缓存
 miniprogram_npm/
 
-.env*
+

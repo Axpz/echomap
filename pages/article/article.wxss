@@ -1,0 +1,23 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background-color: #fff;
+}
+
+.content-scroll {
+  flex: 1;
+  overflow: hidden;
+}
+
+.article-content {
+  padding: 30rpx;
+  line-height: 1.6;
+}
+
+.article-text {
+  font-size: 32rpx;
+  color: #333;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}

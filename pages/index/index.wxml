@@ -1,6 +1,6 @@
 <!-- index.wxml -->
 <navigation-bar
-  title="Echo Map"
+  title="点点长知识"
   back="{{false}}"
   color="black"
   background="#FFF"
@@ -31,6 +31,42 @@
       <view class="info-row">省份：{{selectedLocation.province || '解析中...'}}</view>
       <view class="info-row">经纬度：{{selectedLocation.longitude}} {{selectedLocation.latitude}}</view>
       
+      <!-- 匹配到的知识 (精准匹配) -->
+      <block wx:if="{{matchedKnowledge}}">
+        <view class="section-title">相关知识</view>
+        <view class="knowledge-list">
+          <view 
+            class="knowledge-item matched" 
+            bindtap="onArticleTap" 
+            data-url="{{matchedKnowledge.url}}" 
+            data-title="{{matchedKnowledge.title}}"
+          >
+            <view class="knowledge-title">
+              <text class="match-tag">推荐</text>
+              {{matchedKnowledge.title}}
+            </view>
+            <view class="knowledge-summary">点击查看该地点的详细介绍</view>
+          </view>
+        </view>
+      </block>
+
+      <!-- 知识列表 (城市/省份合并) -->
+      <block wx:if="{{allKnowledge.length > 0}}">
+        <view class="section-title">知识库</view>
+        <view class="knowledge-list">
+          <view 
+            wx:for="{{allKnowledge}}" 
+            wx:key="title" 
+            class="knowledge-item" 
+            bindtap="onArticleTap" 
+            data-url="{{item.url}}" 
+            data-title="{{item.title}}"
+          >
+            <view class="knowledge-title">{{item.title}}</view>
+          </view>
+        </view>
+      </block>
+
       <!-- 城市推荐 -->
       <block wx:if="{{cityImages.length > 0}}">
         <view class="section-title">{{selectedLocation.city}}推荐</view>
